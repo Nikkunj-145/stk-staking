@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  contracts:
+    name: Build + Test contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Run unit tests
+        run: cargo test --workspace --verbose
+
+      - name: Build wasm
+        run: cargo build --release --target wasm32v1-none --workspace
+
+  frontend:
+    name: Build frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --no-audit --no-fund
+
+      - name: Type-check + build
+        env:
+          VITE_TOKEN_ID: CBKQT6J6SFPSNJSK62U4OVVRT3U2UTKVHAKSBGH6SEA4SVV2A67RKQKR
+          VITE_STAKING_ID: CAZIVT4MISKI5FNDGGJ6PO24DM73UTUQ6HTVWUPCG3QSTQ4ZBQGY3ONO
+        run: npm run build
