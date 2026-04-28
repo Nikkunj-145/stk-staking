@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, ExternalLink, AlertCircle } from 'lucide-react';
+import { FaucetPanel, type FaucetStatus } from './components/FaucetPanel';
 import { WalletBar } from './components/WalletBar';
 import { Stats } from './components/Stats';
 import { StakePanel, type TxStatus } from './components/StakePanel';
@@ -16,6 +17,8 @@ import {
   stake,
   unstake,
   claim,
+  faucetClaimed,
+  faucetMint,
 } from './lib/stellar';
 import { TOKEN_ID, STAKING_ID, TOKEN_SYMBOL } from './lib/config';
 import { explorerContract } from './lib/format';
@@ -29,6 +32,8 @@ export default function App() {
   const [tvl, setTvl] = useState<bigint>(0n);
   const [status, setStatus] = useState<TxStatus>({ kind: 'idle' });
   const [error, setError] = useState<string | null>(null);
+  const [faucetStatus, setFaucetStatus] = useState<FaucetStatus>({ kind: 'idle' });
+  const [claimed, setClaimed] = useState(false);
   const livePollRef = useRef<number | null>(null);
 
   const refreshAll = useCallback(async (addr: string | null) => {
@@ -37,14 +42,16 @@ export default function App() {
       const total = await totalStaked();
       setTvl(total);
       if (addr) {
-        const [bal, st, pts] = await Promise.all([
+        const [bal, st, pts, fc] = await Promise.all([
           tokenBalance(addr),
           fetchStaked(addr),
           pendingPoints(addr),
+          faucetClaimed(addr),
         ]);
         setBalance(bal);
         setStakedAmt(st);
         setPoints(pts);
+        setClaimed(fc);
       }
     } catch (e: any) {
       setError(e?.message || 'Failed to load on-chain data');
@@ -89,6 +96,18 @@ export default function App() {
     }
   };
 
+  const handleSwitch = async () => {
+    setError(null);
+    setStatus({ kind: 'idle' });
+    setFaucetStatus({ kind: 'idle' });
+    setBalance(0n);
+    setStakedAmt(0n);
+    setPoints(0n);
+    setClaimed(false);
+    setAddress(null);
+    await handleConnect();
+  };
+
   const prettyError = (msg: string): string => {
     if (msg.includes('Error(Contract, #4)')) return 'Insufficient balance / stake.';
     if (msg.includes('Error(Contract, #5)')) return 'Amount must be positive.';
@@ -117,6 +136,25 @@ export default function App() {
   const handleClaim = async () =>
     wrapTx(`Points claimed`, () => claim(address!))();
 
+  const handleFaucet = async () => {
+    if (!address) return;
+    setFaucetStatus({ kind: 'pending' });
+    try {
+      const { hash } = await faucetMint(address);
+      setFaucetStatus({ kind: 'success', hash });
+      setClaimed(true);
+      await refreshAll(address);
+    } catch (e: any) {
+      const msg = String(e?.message || e);
+      if (msg.includes('Error(Contract, #6)')) {
+        setFaucetStatus({ kind: 'error', message: 'Already claimed — one per wallet.' });
+        setClaimed(true);
+      } else {
+        setFaucetStatus({ kind: 'error', message: prettyError(msg) });
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <header className="border-b border-white/5 sticky top-0 backdrop-blur z-10 bg-ink/70">
@@ -133,12 +171,15 @@ export default function App() {
           <WalletBar
             address={address}
             onConnect={handleConnect}
+            onSwitch={handleSwitch}
             onDisconnect={() => {
               walletDisconnect();
               setAddress(null);
               setBalance(0n);
               setStakedAmt(0n);
               setPoints(0n);
+              setClaimed(false);
+              setFaucetStatus({ kind: 'idle' });
               setStatus({ kind: 'idle' });
             }}
             loading={connecting}
@@ -165,6 +206,15 @@ export default function App() {
         )}
 
         <Stats balance={balance} staked={stakedAmt} points={points} total={tvl} />
+
+        {address && (
+          <FaucetPanel
+            connected={!!address}
+            claimed={claimed}
+            status={faucetStatus}
+            onMint={handleFaucet}
+          />
+        )}
 
         <div className="grid lg:grid-cols-2 gap-6">
           <StakePanel
