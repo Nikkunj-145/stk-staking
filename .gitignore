@@ -9,6 +9,7 @@ target
 !.vscode/extensions.json
 .idea
 *.tsbuildinfo
+.tsbuild-node
 vite.config.d.ts
 vite.config.js
 vite.config.js.map
