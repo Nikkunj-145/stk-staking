@@ -49,6 +49,13 @@ jobs:
 
       - name: Type-check + build
         env:
-          VITE_TOKEN_ID: CBKQT6J6SFPSNJSK62U4OVVRT3U2UTKVHAKSBGH6SEA4SVV2A67RKQKR
-          VITE_STAKING_ID: CAZIVT4MISKI5FNDGGJ6PO24DM73UTUQ6HTVWUPCG3QSTQ4ZBQGY3ONO
+          VITE_TOKEN_ID: CDUECTBOEY4HIGBKXNRW25LB4SYVI4UAUDME2LYAE6T6K5RRFTWCIEDY
+          VITE_STAKING_ID: CBT4AXYW2RL6QG2QA2C7P4UOBEZRVJLGQW6764NTB6WZBFJNM2SWXD2R
         run: npm run build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+          retention-days: 7
