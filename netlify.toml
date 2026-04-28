@@ -1,0 +1,16 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  VITE_TOKEN_ID = "CDUECTBOEY4HIGBKXNRW25LB4SYVI4UAUDME2LYAE6T6K5RRFTWCIEDY"
+  VITE_STAKING_ID = "CBT4AXYW2RL6QG2QA2C7P4UOBEZRVJLGQW6764NTB6WZBFJNM2SWXD2R"
+  VITE_NETWORK_PASSPHRASE = "Test SDF Network ; September 2015"
+  VITE_RPC_URL = "https://soroban-testnet.stellar.org"
+
+# SPA fallback — all routes serve index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
