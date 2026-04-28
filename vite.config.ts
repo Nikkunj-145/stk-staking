@@ -6,7 +6,7 @@ export default defineConfig({
   server: { port: 5176 },
   define: {
     global: 'globalThis',
-    'process.env': '({})',
+    'process.env': JSON.stringify({}),
   },
   optimizeDeps: {
     esbuildOptions: {
