@@ -12,6 +12,7 @@ A two-contract DeFi mini-dApp on Stellar Soroban demonstrating **inter-contract 
 **🌐 Live demo:** **https://stk-staking.onrender.com**
 
 ---
+## demo video:- https://drive.google.com/file/d/1zWIrW1-TbVadsraATlJyk4f-pvmeFwje/view?usp=sharing
 
 ## 🎯 What it does
 
